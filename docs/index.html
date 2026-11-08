@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>无人机巡检 AI 识别报告 · YOLO 检测 Demo</title>
+<style>
+  :root{
+    --ink:#1a1a1a; --sub:#5b6472; --line:#e3e6ea; --bg:#f7f8fa;
+    --accent:#1f4e79; --ok:#0d7a4a; --warn:#b45309;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; padding:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    line-height:1.75; font-size:16px;
+  }
+  .page{
+    max-width:900px; margin:0 auto; background:#fff;
+    padding:56px 64px 72px; box-shadow:0 1px 3px rgba(0,0,0,.06);
+  }
+  @media (max-width:720px){ .page{padding:28px 20px 40px} body{font-size:15px} }
+
+  .kicker{font-size:13px; letter-spacing:.14em; color:var(--accent); text-transform:uppercase; margin-bottom:10px}
+  h1{font-size:30px; line-height:1.35; margin:0 0 10px; font-weight:700; letter-spacing:-.01em}
+  .meta{color:var(--sub); font-size:14px; margin-bottom:8px}
+  .lede{color:var(--sub); font-size:15px; margin:18px 0 0; padding-left:14px; border-left:3px solid var(--accent)}
+
+  h2{font-size:19px; margin:44px 0 14px; padding-bottom:8px; border-bottom:1px solid var(--line); font-weight:700}
+  h2 .num{color:var(--accent); font-variant-numeric:tabular-nums; margin-right:8px}
+  h3{font-size:16px; margin:24px 0 8px; font-weight:600}
+  p{margin:10px 0}
+  ul{margin:10px 0; padding-left:22px}
+  li{margin:5px 0}
+
+  .stats{display:grid; grid-template-columns:repeat(auto-fit,minmax(120px,1fr)); gap:12px; margin:22px 0 6px}
+  .stat{border:1px solid var(--line); border-radius:10px; padding:16px 14px; text-align:center}
+  .stat b{display:block; font-size:28px; line-height:1.1; font-variant-numeric:tabular-nums}
+  .stat span{display:block; font-size:12.5px; color:var(--sub); margin-top:4px}
+
+  table{width:100%; border-collapse:collapse; margin:16px 0; font-size:14.5px}
+  th,td{border:1px solid var(--line); padding:10px 12px; text-align:left; vertical-align:top}
+  th{background:#fafbfc; font-weight:600; color:var(--sub); font-size:13px; letter-spacing:.02em}
+  td.num{font-variant-numeric:tabular-nums; white-space:nowrap}
+  tr:nth-child(even) td{background:#fcfcfd}
+
+  figure{margin:20px 0 26px}
+  figure img{width:100%; height:auto; display:block; border:1px solid var(--line); border-radius:8px}
+  figcaption{font-size:13.5px; color:var(--sub); margin-top:9px; line-height:1.6}
+  figcaption b{color:var(--ink); font-weight:600}
+
+  .note{border-left:3px solid var(--warn); background:#fffbf5; padding:12px 16px; margin:16px 0; font-size:14.5px; border-radius:0 6px 6px 0}
+  .note b{color:var(--warn)}
+
+  .ok{border-left-color:var(--ok); background:#f5fbf7}
+  .ok b{color:var(--ok)}
+
+  .verdict{display:grid; grid-template-columns:1fr 1fr; gap:14px; margin:18px 0}
+  @media (max-width:640px){ .verdict{grid-template-columns:1fr} }
+  .verdict > div{border:1px solid var(--line); border-radius:10px; padding:16px 18px}
+  .verdict h4{margin:0 0 8px; font-size:14.5px}
+  .verdict ul{margin:0; padding-left:20px; font-size:14px}
+  .can h4{color:var(--ok)} .cannot h4{color:var(--warn)}
+
+  pre{background:#f6f8fa; border:1px solid var(--line); border-radius:8px; padding:14px 16px; overflow-x:auto; font-size:13.5px; line-height:1.7}
+  code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}
+
+  footer{margin-top:52px; padding-top:20px; border-top:1px solid var(--line); color:var(--sub); font-size:13.5px}
+  footer a{color:var(--accent); text-decoration:none}
+  footer a:hover{text-decoration:underline}
+
+  @media print{
+    body{background:#fff}
+    .page{box-shadow:none; max-width:none; padding:0}
+    h2{break-after:avoid} figure{break-inside:avoid}
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="kicker">UAV Inspection · AI Detection Report</div>
+  <h1>无人机巡检 AI 识别报告</h1>
+  <div class="meta">YOLO 目标检测 Demo · 航拍图片自动识别与统计 · 生成于 2026-11-08</div>
+  <p class="lede">
+    这份报告由一套六天写成的 Python 流程自动生成：输入航拍图片，输出带检测框的结果图、目标数量统计表，
+    以及一份可读的文字报告。下面全部是三张示例图的真实运行结果，不是示意图。
+  </p>
+
+  <h2><span class="num">01</span>总体结果</h2>
+
+  <div class="stats">
+    <div class="stat"><b>3</b><span>检测图片</span></div>
+    <div class="stat"><b>33</b><span>车辆 car</span></div>
+    <div class="stat"><b>2</b><span>人员 person</span></div>
+    <div class="stat"><b>3</b><span>卡车 truck</span></div>
+    <div class="stat"><b>1</b><span>火车 train</span></div>
+  </div>
+
+  <table>
+    <thead>
+      <tr><th>图片</th><th>识别结果</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>construction.jpg</code></td><td class="num">car 8 · person 2</td><td>工地场景，人与车辆同时被检出</td></tr>
+      <tr><td><code>river.jpg</code></td><td>未识别出目标</td><td>俯视水面，无通用类别目标（或低于阈值）</td></tr>
+      <tr><td><code>road.jpg</code></td><td class="num">car 25 · truck 3 · train 1</td><td>道路场景，车辆密集，检出数量最多</td></tr>
+    </tbody>
+  </table>
+
+  <h2><span class="num">02</span>检测结果图</h2>
+  <p>以下三张是模型实际输出的结果图，检测框和类别标签都来自模型本身。</p>
+
+  <figure>
+    <img src="images/construction_result.jpg" alt="工地航拍图检测结果：2 人 8 车">
+    <figcaption><b>construction.jpg</b> — 识别到 2 个人、8 辆车。人员目标较小，处于画面中下部，仍被检出。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="images/road_result.jpg" alt="道路航拍图检测结果：25 车 3 卡车 1 火车">
+    <figcaption><b>road.jpg</b> — 识别到 25 辆车、3 辆卡车、1 个 train。车流密集，模型给出了大量候选框。</figcaption>
+  </figure>
+
+  <figure>
+    <img src="images/river_result.jpg" alt="河道航拍图检测结果：未识别出目标">
+    <figcaption><b>river.jpg</b> — 未识别出目标。这是俯视水面场景，通用模型没有对应类别，属于预期内的“检不出”。</figcaption>
+  </figure>
+
+  <h2><span class="num">03</span>能力边界（这部分必须说清）</h2>
+
+  <div class="verdict">
+    <div class="can">
+      <h4>✓ 能做到</h4>
+      <ul>
+        <li>单张航拍图目标检测，输出带框图</li>
+        <li>批量跑一个文件夹，自动汇总各类数量</li>
+        <li>视频逐帧检测，输出带框视频</li>
+        <li>把统计结果自动写成巡检报告</li>
+      </ul>
+    </div>
+    <div class="cannot">
+      <h4>✗ 做不到</h4>
+      <ul>
+        <li>用的通用模型，不是巡检专用，小目标漏检明显</li>
+        <li>降阈值能多检出，但误检同时上升</li>
+        <li>报告尚无图表与可视化面板</li>
+        <li>未针对电力/河道/工地做过标注训练</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="note">
+    <b>真实误检案例：</b>视频检测时（conf=0.15），靠岸区域把一艘<b>邮轮识别成 car</b>（置信度 0.18–0.19）；
+    立交桥场景把<b>整片道路识别成 truck</b>（置信度约 0.19）。
+    这两条结论说明：通用模型在航拍俯视场景下，类别判断并不可靠。
+  </div>
+
+  <h2><span class="num">04</span>技术实现</h2>
+  <table>
+    <thead><tr><th>环节</th><th>做法</th></tr></thead>
+    <tbody>
+      <tr><td>检测模型</td><td>Ultralytics YOLO（yolo11n / yolo11s），COCO 预训练权重</td></tr>
+      <tr><td>推理参数</td><td>conf = 0.15，imgsz = 1280（提高分辨率以检出小目标）</td></tr>
+      <tr><td>流程编排</td><td>识别 → 逐类计数 → 写 CSV → 生成 Markdown / TXT 报告</td></tr>
+      <tr><td>运行环境</td><td>Python 3.11，CPU 可跑，单张图约 150 ms</td></tr>
+      <tr><td>代码组织</td><td>六个脚本分别对应“验证环境 / 测试航拍 / 统计 / 出报告 / 一键流程 / 视频检测”</td></tr>
+    </tbody>
+  </table>
+
+  <h2><span class="num">05</span>已知问题与下一步</h2>
+  <ul>
+    <li>航拍目标小、视角特殊、目标密集 → 漏检</li>
+    <li>降低置信度阈值 → 误检上升（邮轮判成车、道路判成卡车）</li>
+    <li>换更大模型（n → s）只是检出更多，没解决根本问题</li>
+  </ul>
+  <p><b>下一步计划：</b>提高 conf 后做人工抽样评估 · 图像切片检测（SAHI 思路）· 收集巡检数据做专用微调 · 报告接入图表可视化。</p>
+
+  <h2><span class="num">06</span>怎么复现</h2>
+  <p>这份报告不是手写的，跑一遍代码就能得到同样结果：</p>
+  <pre><code>pip install -r requirements.txt
+python day05_full_pipeline.py</code></pre>
+  <p>输出物：<code>runs/detect/</code> 下的结果图、<code>detection_summary.csv</code> 统计表、
+  <code>inspection_report.md</code> 报告。换成自己的图片放进 <code>test_images/</code> 重跑即可。</p>
+
+  <div class="note ok">
+    <b>关于示例素材：</b>本页使用的航拍图片来自公开网络，仅用于演示流程，版权不归本项目所有。
+    正式使用请替换为自有或已授权数据，换数据无需改代码。
+  </div>
+
+  <footer>
+    代码与说明：<a href="https://github.com/saifdeen418-boop/uav-inspection-demo">github.com/saifdeen418-boop/uav-inspection-demo</a><br>
+    项目周期：2026-05-21 ~ 05-28（六天完成）· 报告页生成于 2026-11-08
+  </footer>
+
+</div>
+</body>
+</html>
