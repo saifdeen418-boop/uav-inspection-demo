@@ -1,0 +1,28 @@
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# Python 缓存
+__pycache__/
+*.pyc
+*.pyo
+
+# 检测输出（每次运行都会重新生成）
+runs/
+
+# 模型权重（运行时会自动下载，不纳入仓库）
+*.pt
+*.onnx
+*.engine
+
+# 系统 / 编辑器
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 凭据兜底：任何 token / 密钥都不许进仓库
+github_token*
+*.token
+.env

@@ -1,0 +1,8 @@
+# 直接依赖（2026-05 验证通过的版本）
+ultralytics==8.4.52
+
+# 说明：
+# - ultralytics 会自动带上 torch / torchvision / opencv-python / numpy 等依赖
+# - 如果这个版本装不上（比如以后 Python 版本变化），可放宽为：
+#     ultralytics>=8.4,<9
+# - 第一次运行时 YOLO 会自动下载 yolo11n.pt（约 5.5 MB）到当前目录
